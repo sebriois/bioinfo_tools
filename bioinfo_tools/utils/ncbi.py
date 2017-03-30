@@ -44,7 +44,7 @@ def makeblastdb(fasta_filepath):
 
 
 class Blastp(object):
-    def __init__(self, use_cluster = False, **kwargs):
+    def __init__(self, use_cluster = False, sync = True, **kwargs):
         for arg_name in ['query', 'db', 'out']:
             if arg_name not in kwargs:
                 raise Exception("'%s' argument is required" % arg_name)
@@ -73,19 +73,20 @@ class Blastp(object):
                 subprocess.check_output(blast_cmd, shell = True)
             except subprocess.CalledProcessError as e:
                 raise Exception(e.output)
-
-        # wait for output file to be writen on disk
-        max_checks = 10
-        while not os.path.exists(self.args['out']) and max_checks > 0:
-            time.sleep(10)
-            max_checks -= 1
-
-        if not os.path.exists(self.args['out']):
-            raise Exception("blast output does not exist: " + self.args['out'])
+        
+        if sync:
+            # wait for output file to be writen on disk
+            max_checks = 10
+            while not os.path.exists(self.args['out']) and max_checks > 0:
+                time.sleep(10)
+                max_checks -= 1
+    
+            if not os.path.exists(self.args['out']):
+                raise Exception("blast output does not exist: " + self.args['out'])
 
 
 class Blastx(object):
-    def __init__(self, use_cluster = False, **kwargs):
+    def __init__(self, use_cluster = False, sync = True, **kwargs):
         for arg_name in ['query', 'db', 'out']:
             if arg_name not in kwargs:
                 raise Exception("'%s' argument is required" % arg_name)
@@ -114,12 +115,13 @@ class Blastx(object):
                 subprocess.check_output(blast_cmd, shell = True)
             except subprocess.CalledProcessError as e:
                 raise Exception(e.output)
-
-        # wait for output file to be writen on disk
-        max_checks = 10
-        while not os.path.exists(self.args['out']) and max_checks > 0:
-            time.sleep(10)
-            max_checks -= 1
-
-        if not os.path.exists(self.args['out']):
-            raise Exception("blast output does not exist: " + self.args['out'])
+        
+        if sync:
+            # wait for output file to be writen on disk
+            max_checks = 10
+            while not os.path.exists(self.args['out']) and max_checks > 0:
+                time.sleep(10)
+                max_checks -= 1
+    
+            if not os.path.exists(self.args['out']):
+                raise Exception("blast output does not exist: " + self.args['out'])
