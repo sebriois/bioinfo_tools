@@ -43,8 +43,11 @@ def makeblastdb(fasta_filepath):
     subprocess.check_call(" ".join(cmd), shell = True)
 
 
-class Blastp(object):
-    def __init__(self, use_cluster = False, sync = True, **kwargs):
+class BlastCommand(object):
+    def __init__(self, *args, **kwargs):
+        self.blast_prog = None
+        self.sge_job = None
+        
         for arg_name in ['query', 'db', 'out']:
             if arg_name not in kwargs:
                 raise Exception("'%s' argument is required" % arg_name)
@@ -55,73 +58,62 @@ class Blastp(object):
 
         if isinstance(self.args['db'], list):
             self.args['db'] = "'" + " ".join(self.args['db']) + "'"
+    
+    def run(self, job_name = None, use_sge = False, async = False):
+        """
+        run blast command, either locally or through qsub
+        """
+        blast_commandline = self._create_commandline()
 
-        blast_cmd = ['blastp']
+        if use_sge:
+            if not job_name:
+                job_name = os.path.basename(self.args['out']).split('.')[0]
+            self.sge_job = SgeJob()
+            self.sge_job.submit(blast_commandline, job_name = '%s_%s' % (self.blast_prog, job_name), sync = not async)
+            return self.sge_job.get_job_id()
+        else:
+            if async:
+                # TODO: make this option available locally
+                print("Can't run in async mode locally. Will run synchronously.")
+            
+            try:
+                return subprocess.check_output(blast_commandline, shell = True)
+            except subprocess.CalledProcessError as e:
+                raise Exception(e.output)
+    
+    def run_async(self, job_name = None, use_sge = False):
+        return self.run(job_name = job_name, use_sge = use_sge, async = True)
+    
+    def wait_for_output(self, max_checks = 10):
+        """
+        wait for output file to be writen on disk
+        """
+        while not os.path.exists(self.args['out']) and max_checks > 0:
+            time.sleep(10)
+            max_checks -= 1
+    
+        if not os.path.exists(self.args['out']):
+            raise Exception("blast output does not exist: " + self.args['out'])
 
+    def _create_commandline(self):
+        if not self.blast_prog:
+            raise Exception("blast_prog must be set")
+    
+        blast_params = []
         for key, value in self.args.items():
             if not key.startswith('-'):
                 key = '-' + key
-            blast_cmd.append(key + '=' + str(value))
-        blast_cmd = " ".join(blast_cmd)
-
-        if use_cluster:
-            filename = os.path.basename(self.args['out']).split('.')[0]
-            blast_job = SgeJob()
-            blast_job.submit(blast_cmd, 'BLASTP_%s' % filename)
-        else:
-            try:
-                subprocess.check_output(blast_cmd, shell = True)
-            except subprocess.CalledProcessError as e:
-                raise Exception(e.output)
-        
-        if sync:
-            # wait for output file to be writen on disk
-            max_checks = 10
-            while not os.path.exists(self.args['out']) and max_checks > 0:
-                time.sleep(10)
-                max_checks -= 1
-    
-            if not os.path.exists(self.args['out']):
-                raise Exception("blast output does not exist: " + self.args['out'])
+            blast_params.append(key + '=' + str(value))
+        return self.blast_prog + " " + " ".join(blast_params)
 
 
-class Blastx(object):
-    def __init__(self, use_cluster = False, sync = True, **kwargs):
-        for arg_name in ['query', 'db', 'out']:
-            if arg_name not in kwargs:
-                raise Exception("'%s' argument is required" % arg_name)
+class Blastp(BlastCommand):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.blast_prog = 'blastp'
 
-        self.args = kwargs
-        if not os.path.exists(self.args['query']):
-            raise Exception("query file not found: " + self.args['query'])
 
-        if isinstance(self.args['db'], list):
-            self.args['db'] = "'" + " ".join(self.args['db']) + "'"
-
-        blast_cmd = ['blastx']
-
-        for key, value in self.args.items():
-            if not key.startswith('-'):
-                key = '-' + key
-            blast_cmd.append(key + '=' + str(value))
-        blast_cmd = " ".join(blast_cmd)
-
-        if use_cluster:
-            filename = os.path.basename(self.args['out']).split('.')[0]
-            blast_job = SgeJob()
-            blast_job.submit(blast_cmd, 'BLASTX_%s' % filename)
-        else:
-            try:
-                subprocess.check_output(blast_cmd, shell = True)
-            except subprocess.CalledProcessError as e:
-                raise Exception(e.output)
-        
-        if sync:
-            # wait for output file to be writen on disk
-            max_checks = 10
-            while not os.path.exists(self.args['out']) and max_checks > 0:
-                time.sleep(10)
-                max_checks -= 1
-    
-            if not os.path.exists(self.args['out']):
-                raise Exception("blast output does not exist: " + self.args['out'])
+class Blastx(BlastCommand):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.blast_prog = 'blastx'

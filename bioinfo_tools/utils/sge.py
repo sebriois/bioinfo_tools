@@ -14,6 +14,12 @@ class SgeJob(object):
         self.scratch_dir = scratch_dir
         os.makedirs(self.scratch_dir, exist_ok = True)
         self.params = []
+        self._job_id = None
+    
+    def get_job_id(self):
+        if not self._job_id:
+            print("No command submitted yet, there's no job ID to return")
+        return self._job_id
     
     def set_params(self, *args, **kwargs):
         self.params = []
@@ -29,7 +35,7 @@ class SgeJob(object):
             self.params.append(param)
             self.params.append(value)
     
-    def submit(self, command_line, job_name = 'NO_NAME', sync = True):
+    def submit(self, command_line, job_name = 'NO_NAME', sync = False):
         if '-q' not in self.params:
             self.params.extend(['-q', 'all.q'])
         
@@ -53,20 +59,20 @@ class SgeJob(object):
         qsub_response = subprocess.check_output(qsub_command, shell = True)
         
         try:
-            job_id = re.findall("Your job (\d+) ", qsub_response.decode())[0]
+            self._job_id = re.findall("Your job (\d+) ", qsub_response.decode())[0]
         except IndexError:
             raise Exception("something went wrong with the job submission: %s" % qsub_response)
         
-        job = self.qstat(job_id)
+        job = self.qstat(self._job_id)
         
         if sync:
             wait_for = 2  # seconds
             while job and job['state'] != 'Eqw':
-                print("job ID %s (%s) - state: %s (next check in %ssec)" % (job_id, job_name, job['state'], wait_for))
+                print("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job_name, job['state'], wait_for))
                 wait_for *= 2
                 wait_for = min([wait_for, MAX_WAIT])
                 time.sleep(wait_for)
-                job = self.qstat(job_id)
+                job = self.qstat(self._job_id)
         
         return job
     
