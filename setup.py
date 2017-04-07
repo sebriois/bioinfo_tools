@@ -6,7 +6,7 @@ if sys.version_info < (3,5):
 
 setup(
     name='bioinfo_tools',
-    version='0.0.2',
+    version='0.0.3',
     url='https://github.com/sebriois/bioinfo_tools',
     author='Sebastien Briois',
     author_email='sebriois@gmail.com',
