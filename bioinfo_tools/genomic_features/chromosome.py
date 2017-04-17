@@ -1,3 +1,5 @@
+from typing import Dict
+
 from Bio.SeqFeature import FeatureLocation
 
 from bioinfo_tools.genomic_features.gene import Gene
@@ -11,13 +13,32 @@ class Chromosome(object):
     
     def __repr__(self):
         return u"%s (%s genes)" % (self.chromosome_id, len(self.genes))
-    
-    def add_gene(self, gff_feature):
-        """
-        :type gff_feature: str
-        :rtype: None
-        """
-        gene = Gene(self, gff_feature)
+        
+    def add_gene(self, gff_feature:Dict):
+        gene_id = None
+        
+        if 'gene_id' in gff_feature:
+            gene_id = gff_feature['gene_id']
+        elif 'attributes' in gff_feature:
+            if 'Name' in gff_feature['attributes']:
+                gene_id = gff_feature['attributes']['Name']
+            elif 'ID' in gff_feature['attributes']:
+                gene_id = gff_feature['attributes']['ID']
+        
+        if not gene_id:
+            raise Exception("gene_id not found in given GFF feature")
+        
+        gene = Gene(
+            gene_id = gene_id,
+            chromosome = self,
+            start = gff_feature.get('start', None),
+            end = gff_feature.get('end', None),
+            strand = gff_feature.get('strand', None),
+            **gff_feature.get('attributes', {})
+        )
+        for transcript in gff_feature.get('mRNA', []):
+            gene.add_transcript(transcript)
+        
         self._genes[gene['gene_id']] = gene
     
     @property

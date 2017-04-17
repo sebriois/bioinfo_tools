@@ -1,37 +1,28 @@
 #!/usr/bin/env python
-from typing import List, Set
+from typing import List
 
-from Bio.Seq import Seq
-from Bio.SeqFeature import FeatureLocation, CompoundLocation
+from Bio.SeqFeature import FeatureLocation
 from Bio.SeqRecord import SeqRecord
+
+from bioinfo_tools.genomic_features.transcript import Transcript
 
 
 class Gene(object):
-    def __init__(self, chromosome, gff_feature):
+    def __init__(self, gene_id, chromosome = None, start = None, end = None, strand = None, **gff_attributes):
+        self.gene_id = gene_id
         self.chromosome = chromosome
-        self._gff_feature = gff_feature
-        self._transcripts = []
-        self._all_ids = []
+        self.attributes = gff_attributes
+        self.transcripts = []
         
-        if 'gene_id' in gff_feature:
-            self.gene_id = gff_feature['gene_id']
-        else:
-            self.gene_id = gff_feature['attributes'].get('Name', gff_feature['attributes']['ID'])
-        
-        strand = gff_feature.get('strand', 0)
-        if strand in ("-1", -1, "-"):
-            strand = -1
-        elif strand in ("+1", "1", 1, "+"):
-            strand = 1
-        else:
-            strand = 0
-        
-        self.location = FeatureLocation(
-            start = gff_feature['start'],
-            end = gff_feature['end'],
-            strand = strand
-        )
-        self.attributes = gff_feature.get('attributes', [])
+        if start and end and strand:
+            if strand in ("-1", -1, "-"):
+                strand = -1
+            elif strand in ("+1", "1", 1, "+"):
+                strand = 1
+            else:
+                strand = 0
+            
+            self.location = FeatureLocation(start = start, end = end, strand = strand, ref = gene_id)
     
     def __repr__(self):
         return u"%s" % self.gene_id
@@ -52,12 +43,27 @@ class Gene(object):
     def get(self, *args):
         return self.__dict__.get(*args)
     
-    @property
-    def transcripts(self) -> List:
-        if not self._transcripts:
-            for mRNA in self._gff_feature.get('mRNA', []):
-                self._transcripts.append(Transcript(self.chromosome, mRNA))
-        return self._transcripts
+    def add_transcript(self, mRNA_feature):
+        transcript_id = None
+    
+        if 'transcript_id' in mRNA_feature:
+            transcript_id = mRNA_feature['transcript_id']
+        elif 'attributes' in mRNA_feature:
+            if 'Name' in mRNA_feature['attributes']:
+                transcript_id = mRNA_feature['attributes']['Name']
+            elif 'ID' in mRNA_feature['attributes']:
+                transcript_id = mRNA_feature['attributes']['ID']
+    
+        transcript = Transcript(
+            transcript_id = transcript_id,
+            chromosome = self.chromosome,
+            start = mRNA_feature.get('start', None),
+            end = mRNA_feature.get('end', None),
+            strand = mRNA_feature.get('strand', None),
+            features = mRNA_feature.get('features', []),
+            **mRNA_feature.get('attributes', {})
+        )
+        self.transcripts.append(transcript)
     
     def as_fasta(self, **kwargs):
         record = SeqRecord(self.extract_sequence(**kwargs), id = self.gene_id)
@@ -72,7 +78,7 @@ class Gene(object):
         return all possible IDs for that gene
         :rtype: set
         """
-        if not self._all_ids:
+        if not hasattr(self, '_all_ids'):
             all_ids = set()  # all possible IDs for the given gene
             
             gene_name = self.attributes.get('Name', None)
@@ -93,218 +99,3 @@ class Gene(object):
             self._all_ids = list(all_ids)
         
         return self._all_ids
-
-
-class Transcript(object):
-    def __init__(self, chromosome, gff_feature):
-        self.chromosome = chromosome
-        self.attributes = gff_feature.get('attributes', {})
-        self.features = gff_feature.get('features', [])
-        
-        if 'transcript_id' in gff_feature:
-            self.transcript_id = gff_feature['transcript_id']
-        else:
-            self.transcript_id = gff_feature['attributes'].get('Name', gff_feature['attributes']['ID'])
-        
-        strand = gff_feature.get('strand', 0)
-        if strand in ("-1", -1, "-"):
-            strand = -1
-        elif strand in ("+1", "1", 1, "+"):
-            strand = 1
-        else:
-            strand = 0
-        
-        self.location = FeatureLocation(
-            start = gff_feature['start'],
-            end = gff_feature['end'],
-            strand = strand
-        )
-        
-        # cached properties
-        self._polypeptide = None
-        self._polypeptide_was_updated = False
-        self._exons = None
-        self._cds = None
-        self._five_prime_utr = None
-        self._three_prime_utr = None
-        
-        self._nucleic_coding_sequence = None
-        self._protein_sequence = None
-    
-    def __repr__(self):
-        return u"%s" % self.transcript_id
-    
-    def get(self, attribute):
-        return self.__dict__.get(attribute, None)
-    
-    def get_all_ids(self) -> Set[str]:
-        all_ids = set()  # all possible IDs for the given gene
-        
-        transcript_name = self.attributes.get('Name', None)
-        if transcript_name:
-            all_ids.add(transcript_name)
-        
-        transcript_id = self.attributes.get('ID', None)
-        if transcript_id:
-            all_ids.add(transcript_id)
-        
-        ancestor_identifier = self.attributes.get('ancestorIdentifier', None)
-        if ancestor_identifier:
-            all_ids.add(ancestor_identifier)
-        
-        if self.protein_id:
-            all_ids.add(self.protein_id)
-        
-        return all_ids
-    
-    @property
-    def protein_id(self):
-        try:
-            polypeptide_feature = next(filter(lambda f: f['type'] == 'polypeptide', self.features))
-            return polypeptide_feature['attributes'].get('Name', polypeptide_feature['attributes'].get('ID', None))
-        except StopIteration:
-            return None
-    
-    @property
-    def protein_sequence(self) -> Seq:
-        """
-        Return the protein sequence for this transcript using CDS annotations
-        :type chromosome_nucleic_sequence: str
-        :rtype: str
-        """
-        if not self._protein_sequence:
-            nucleic_sequence = self.nucleic_coding_sequence
-            
-            if not nucleic_sequence:
-                return None
-            
-            # make sure the sequence length is a multiple of 3
-            end_position = len(nucleic_sequence) - len(nucleic_sequence) % 3
-            if isinstance(nucleic_sequence, str):
-                nucleic_sequence = Seq(nucleic_sequence[:end_position])
-            else:
-                nucleic_sequence = nucleic_sequence[:end_position]
-            
-            try:
-                self._protein_sequence = nucleic_sequence.translate()
-            except TypeError:
-                print("Received weird nucleic_sequence type: %s - %s" % (type(nucleic_sequence), nucleic_sequence))
-        
-        return self._protein_sequence
-    
-    def nucleic_sequence(self, feature_type):
-        """
-        :type feature_type: str
-        :rtype: Bio.Seq.Seq
-        """
-        location = self._get_features(feature_type)
-        if location:
-            return location.extract(self.chromosome.nucleic_sequence)
-        return None
-    
-    @property
-    def nucleic_coding_sequence(self) -> Seq:
-        if not self._nucleic_coding_sequence:
-            if self.cds:
-                self._nucleic_coding_sequence = self.cds.extract(self.chromosome.nucleic_sequence)
-                if self.location.strand == -1:
-                    self._nucleic_coding_sequence = Seq(self._nucleic_coding_sequence).reverse_complement()
-        
-        return self._nucleic_coding_sequence
-    
-    @property
-    def cds(self) -> CompoundLocation:
-        if self._cds is None:
-            cds_list = sorted(
-                map(
-                    lambda exon: FeatureLocation(
-                        start = max(exon.start, self.polypeptide.start),
-                        end = min(exon.end, self.polypeptide.end)
-                    ),
-                    filter(
-                        lambda exon: exon.start <= self.polypeptide.end and exon.end >= self.polypeptide.start,
-                        self.exons.parts
-                    ),
-                ),
-                key = lambda exon: exon.start
-            )
-            
-            if len(cds_list) == 1:
-                self._cds = cds_list[0]
-            
-            if len(cds_list) > 1:
-                self._cds = CompoundLocation(cds_list)
-        
-        return self._cds
-    
-    @property
-    def exons(self):
-        if self._exons is None:
-            self._exons = self._get_features("exon")
-        return self._exons
-    
-    @property
-    def polypeptide(self):
-        if self._polypeptide is None:
-            self._polypeptide = self._get_features("polypeptide")
-        
-        return self._polypeptide
-    
-    @property
-    def five_prime_utr(self):
-        if self._five_prime_utr is None:
-            utr_list = sorted(
-                map(
-                    lambda exon: FeatureLocation(
-                        start = exon.start,
-                        end = min(exon.end, self.polypeptide.start)
-                    ),
-                    filter(
-                        lambda exon: exon.start <= self.polypeptide.start,
-                        self.exons.parts
-                    )
-                ),
-                key = lambda exon: exon.start
-            )
-            
-            if len(utr_list) == 1:
-                self._five_prime_utr = utr_list[0]
-            
-            elif len(utr_list) > 1:
-                self._five_prime_utr = CompoundLocation(utr_list)
-
-        return self._five_prime_utr
-    
-    @property
-    def three_prime_utr(self):
-        return self._get_features("three_prime_utr")
-    
-    @property
-    def utr(self, location):
-        if int(location) not in (3, 5):
-            raise Exception("location must be 3 or 5")
-        
-        if int(location) == 3:
-            return self.three_prime_utr
-        if int(location) == 5:
-            return self.five_prime_utr
-    
-    def _get_features(self, feature_type):
-        """
-        :type feature_type: str
-        :rtype: CompoundLocation
-        """
-        locations = []
-        features = sorted(
-            filter(lambda f: f['type'].lower() == feature_type, self.features),
-            key = lambda f: f['start']
-        )
-        for feature in features:
-            locations.append(FeatureLocation(feature['start'], feature['end']))
-        
-        if len(locations) == 1:
-            return locations[0]
-        if len(locations) > 1:
-            return CompoundLocation(locations)
-        
-        return None
