@@ -13,7 +13,7 @@ class Chromosome(object):
     
     def __repr__(self):
         return u"%s (%s genes)" % (self.chromosome_id, len(self.genes))
-        
+    
     def add_gene(self, gff_feature:Dict):
         gene_id = None
         

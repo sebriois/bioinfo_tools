@@ -8,21 +8,18 @@ from bioinfo_tools.genomic_features.transcript import Transcript
 
 
 class Gene(object):
-    def __init__(self, gene_id, chromosome = None, start = None, end = None, strand = None, **gff_attributes):
+    def __init__(self, gene_id, chromosome = None, start = 0, end = 0, strand = None, **gff_attributes):
         self.gene_id = gene_id
         self.chromosome = chromosome
         self.attributes = gff_attributes
         self.transcripts = []
         
-        if start and end and strand:
-            if strand in ("-1", -1, "-"):
-                strand = -1
-            elif strand in ("+1", "1", 1, "+"):
-                strand = 1
-            else:
-                strand = 0
-            
-            self.location = FeatureLocation(start = start, end = end, strand = strand, ref = gene_id)
+        if strand in ("-1", -1, "-"):
+            strand = -1
+        elif strand in ("+1", "1", 1, "+"):
+            strand = 1
+        
+        self.location = FeatureLocation(start = start, end = end, strand = strand, ref = gene_id)
     
     def __repr__(self):
         return u"%s" % self.gene_id

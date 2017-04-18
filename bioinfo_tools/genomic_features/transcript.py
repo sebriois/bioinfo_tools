@@ -5,21 +5,18 @@ from Bio.SeqFeature import FeatureLocation, CompoundLocation
 
 
 class Transcript(object):
-    def __init__(self, transcript_id, chromosome = None, start = None, end = None, strand = None, features = list(), **gff_attributes):
+    def __init__(self, transcript_id, chromosome = None, start = 0, end = 0, strand = None, features = list(), **gff_attributes):
         self.transcript_id = transcript_id
         self.chromosome = chromosome
         self.attributes = gff_attributes
         self.features = features
         
-        if start and end and strand:
-            if strand in ("-1", -1, "-"):
-                strand = -1
-            elif strand in ("+1", "1", 1, "+"):
-                strand = 1
-            else:
-                strand = 0
-            
-            self.location = FeatureLocation(start = start, end = end, strand = strand)
+        if strand in ("-1", -1, "-"):
+            strand = -1
+        elif strand in ("+1", "1", 1, "+"):
+            strand = 1
+        
+        self.location = FeatureLocation(start = start, end = end, strand = strand, ref = transcript_id)
         
         # cached properties
         self._polypeptide = None
