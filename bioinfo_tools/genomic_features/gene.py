@@ -42,7 +42,7 @@ class Gene(object):
     
     def add_transcript(self, mRNA_feature):
         transcript_id = None
-    
+        
         if 'transcript_id' in mRNA_feature:
             transcript_id = mRNA_feature['transcript_id']
         elif 'attributes' in mRNA_feature:
@@ -54,8 +54,8 @@ class Gene(object):
         transcript = Transcript(
             transcript_id = transcript_id,
             chromosome = self.chromosome,
-            start = mRNA_feature.get('start', None),
-            end = mRNA_feature.get('end', None),
+            start = mRNA_feature.get('start', 0),
+            end = mRNA_feature.get('end', 0),
             strand = mRNA_feature.get('strand', None),
             features = mRNA_feature.get('features', []),
             **mRNA_feature.get('attributes', {})

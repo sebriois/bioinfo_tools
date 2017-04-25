@@ -31,8 +31,8 @@ class Chromosome(object):
         gene = Gene(
             gene_id = gene_id,
             chromosome = self,
-            start = gff_feature.get('start', None),
-            end = gff_feature.get('end', None),
+            start = gff_feature.get('start', 0),
+            end = gff_feature.get('end', 0),
             strand = gff_feature.get('strand', None),
             **gff_feature.get('attributes', {})
         )
@@ -40,6 +40,7 @@ class Chromosome(object):
             gene.add_transcript(transcript)
         
         self._genes[gene['gene_id']] = gene
+        return gene
     
     @property
     def genes(self):

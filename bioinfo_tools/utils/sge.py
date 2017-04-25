@@ -3,6 +3,7 @@ import subprocess
 import re
 from datetime import datetime
 import time
+import xml.etree.ElementTree as ET
 
 DEFAULT_SCRATCH_DIR = os.path.join(os.sep, "home", os.environ.get("USER"), "sge_logs")
 
@@ -77,29 +78,13 @@ class SgeJob(object):
         return job
     
     def qstat(self, job_id = None):
-        qstat_response = subprocess.check_output("qstat", shell = True)
+        xml_string = subprocess.check_output("qstat -xml", shell = True)
+        xml_obj = ET.fromstring(xml_string)
+        jobs = list()
+        for job_list in xml_obj.iter("job_list"):
+            job = dict()
+            for elem in job_list:
+                job[elem.tag] = elem.text
+            jobs.append(job)
         
-        start_reading = False
-        jobs = {}
-        
-        for line in qstat_response.decode().splitlines():
-            if line.startswith("----"):
-                start_reading = True
-                continue
-            
-            if not start_reading:
-                continue
-            
-            columns = re.split("\s+", line.strip())
-            jobs[columns[0]] = {
-                'id': columns[0],
-                'priority': columns[1],
-                'name': columns[2],
-                'state': columns[4],
-                'submit_date': datetime.strptime("%s %s" % (columns[5], columns[6]), "%m/%d/%Y %H:%M:%S"),
-                'queue': columns[6]
-            }
-        
-        if job_id:
-            return jobs.get(job_id, None)
         return jobs
