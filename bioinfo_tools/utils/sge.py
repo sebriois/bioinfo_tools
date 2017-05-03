@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 import xml.etree.ElementTree as ET
 
-DEFAULT_SCRATCH_DIR = os.path.join(os.sep, "home", os.environ.get("USER"), "sge_logs")
+DEFAULT_SCRATCH_DIR = os.path.join(os.sep, os.environ.get("HOME"), "sge_logs")
 
 MAX_WAIT = 120  # seconds
 
@@ -85,6 +85,13 @@ class SgeJob(object):
             job = dict()
             for elem in job_list:
                 job[elem.tag] = elem.text
+            
+            if job_id and job['JB_job_number'] != job_id:
+                continue
+            
             jobs.append(job)
+        
+        if job_id and len(jobs) == 1:
+            return jobs[0]
         
         return jobs
