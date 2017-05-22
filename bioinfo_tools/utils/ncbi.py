@@ -34,11 +34,11 @@ def fetch_taxonomy(species_name):
     return ncbi_id, ncbi_xml
 
 
-def makeblastdb(fasta_filepath):
+def makeblastdb(fasta_filepath, dbtype = 'prot'):
     cmd = [
         "makeblastdb",
         "-in", fasta_filepath,
-        "-dbtype", "prot"
+        "-dbtype", dbtype
     ]
     subprocess.check_call(" ".join(cmd), shell = True)
 
