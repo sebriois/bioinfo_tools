@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from Bio.SeqFeature import FeatureLocation
 
@@ -43,16 +43,16 @@ class Chromosome(object):
         return gene
     
     @property
-    def genes(self):
+    def genes(self) -> List[Gene]:
         return list(self._genes.values())
     
     @property
-    def sorted_genes(self):
+    def sorted_genes(self) -> List[Gene]:
         if not hasattr(self, "_sorted_genes"):
             self._sorted_genes = sorted(self._genes.values(), key = lambda gene: gene.location.start)
         return self._sorted_genes
     
-    def get_gene(self, gene_id):
+    def get_gene(self, gene_id) -> Gene:
         return self._genes.get(gene_id, None)
 
     def attach_nucleic_sequence(self, sequence):

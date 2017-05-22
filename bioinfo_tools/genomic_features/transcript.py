@@ -21,7 +21,6 @@ class Transcript(object):
         # cached properties
         self._polypeptide = None
         self._exons = None
-        self._cds = None
         self._five_prime_utr = None
         self._three_prime_utr = None
         
@@ -109,7 +108,7 @@ class Transcript(object):
     
     @property
     def cds(self) -> CompoundLocation:
-        if self._cds is None:
+        if not hasattr(self, "_cds"):
             cds_list = sorted(
                 map(
                     lambda exon: FeatureLocation(

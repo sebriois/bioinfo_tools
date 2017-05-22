@@ -117,3 +117,9 @@ class Blastx(BlastCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.blast_prog = 'blastx'
+
+
+class Blastn(BlastCommand):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.blast_prog = 'blastn'

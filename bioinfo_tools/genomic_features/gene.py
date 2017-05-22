@@ -15,11 +15,11 @@ class Gene(object):
         self.transcripts = []
         
         if strand in ("-1", -1, "-"):
-            strand = -1
+            self.strand = -1
         elif strand in ("+1", "1", 1, "+"):
-            strand = 1
+            self.strand = 1
         
-        self.location = FeatureLocation(start = start, end = end, strand = strand, ref = gene_id)
+        self.location = FeatureLocation(start = start, end = end, strand = self.strand, ref = gene_id)
     
     def __repr__(self):
         return u"%s" % self.gene_id
@@ -67,7 +67,7 @@ class Gene(object):
         return record.format("fasta")
     
     def extract_sequence(self, upstream = 0, downstream = 0):
-        location = FeatureLocation(self.location.start - upstream, self.location.end + downstream, self.location.strand)
+        location = FeatureLocation(self.location.start - upstream, self.location.end + downstream, self.strand)
         return location.extract(self.chromosome.nucleic_sequence)
 
     def get_all_ids(self) -> List[str]:
