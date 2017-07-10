@@ -8,11 +8,12 @@ from bioinfo_tools.genomic_features.transcript import Transcript
 
 
 class Gene(object):
-    def __init__(self, gene_id, chromosome = None, start = 0, end = 0, strand = None, **gff_attributes):
+    def __init__(self, gene_id, chromosome = None, start = 0, end = 0, strand = None, assembly_name = None, **gff_attributes):
         self.gene_id = gene_id
         self.chromosome = chromosome
         self.attributes = gff_attributes
         self.transcripts = []
+        self.assembly_name = assembly_name
         
         if strand in ("-1", -1, "-"):
             self.strand = -1

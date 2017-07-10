@@ -4,6 +4,7 @@ import time
 import json
 import subprocess
 
+from bioinfo_tools.utils.log import Log
 from bioinfo_tools.utils.sge import SgeJob
 
 
@@ -20,11 +21,7 @@ def fetch_taxonomy(species_name):
         ncbi_response = r.read()
     
     json_response = json.loads(ncbi_response.decode())
-    try:
-        ncbi_id = json_response.get("esearchresult", {}).get("idlist", [])[0]
-    except IndexError:
-        print("[%s] Can't figure out taxonomy ID using URL: %s" % (species_name, uri))
-        return None, None
+    ncbi_id = json_response.get("esearchresult", {}).get("idlist", [])[0]
     
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=" + ncbi_id
     with request.urlopen(url) as r:
@@ -43,8 +40,10 @@ def makeblastdb(fasta_filepath, dbtype = 'prot'):
     subprocess.check_call(" ".join(cmd), shell = True)
 
 
-class BlastCommand(object):
+class BlastCommand(Log):
     def __init__(self, *args, **kwargs):
+        super().__init__(**kwargs)
+        
         self.blast_prog = None
         self.sge_job = None
         
@@ -74,7 +73,7 @@ class BlastCommand(object):
         else:
             if async:
                 # TODO: make this option available locally
-                print("Can't run in async mode locally. Will run synchronously.")
+                self.log("Can't run in async mode locally. Will run synchronously.")
             
             try:
                 return subprocess.check_output(blast_commandline, shell = True)

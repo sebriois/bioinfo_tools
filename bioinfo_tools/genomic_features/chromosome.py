@@ -6,8 +6,9 @@ from bioinfo_tools.genomic_features.gene import Gene
 
 
 class Chromosome(object):
-    def __init__(self, chromosome_id):
+    def __init__(self, chromosome_id, assembly_name = None):
         self.chromosome_id = chromosome_id
+        self.assembly_name = assembly_name
         self.length = 0
         self._genes = {}
     
@@ -34,6 +35,7 @@ class Chromosome(object):
             start = gff_feature.get('start', 0),
             end = gff_feature.get('end', 0),
             strand = gff_feature.get('strand', None),
+            assembly_name = self.assembly_name,
             **gff_feature.get('attributes', {})
         )
         for transcript in gff_feature.get('mRNA', []):

@@ -5,13 +5,17 @@ from datetime import datetime
 import time
 import xml.etree.ElementTree as ET
 
+from bioinfo_tools.utils.log import Log
+
 DEFAULT_SCRATCH_DIR = os.path.join(os.sep, os.environ.get("HOME"), "sge_logs")
 
 MAX_WAIT = 120  # seconds
 
 
-class SgeJob(object):
-    def __init__(self, scratch_dir = DEFAULT_SCRATCH_DIR):
+class SgeJob(Log):
+    def __init__(self, scratch_dir = DEFAULT_SCRATCH_DIR, **kwargs):
+        super().__init__(**kwargs)
+        
         self.scratch_dir = scratch_dir
         os.makedirs(self.scratch_dir, exist_ok = True)
         self.params = []
@@ -19,7 +23,7 @@ class SgeJob(object):
     
     def get_job_id(self):
         if not self._job_id:
-            print("No command submitted yet, there's no job ID to return")
+            self.log("No command submitted yet, there's no job ID to return")
         return self._job_id
     
     def set_params(self, *args, **kwargs):
@@ -56,7 +60,7 @@ class SgeJob(object):
             self.params.extend(['-b', 'y'])
         
         qsub_command = "qsub -clear %s '%s'" % (" ".join(self.params), command_line.strip().replace("'", '"'))
-        print(qsub_command)
+        self.log(qsub_command)
         qsub_response = subprocess.check_output(qsub_command, shell = True)
         
         try:
@@ -69,7 +73,7 @@ class SgeJob(object):
         if sync:
             wait_for = 2  # seconds
             while job and job['state'] != 'Eqw':
-                print("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job_name, job['state'], wait_for))
+                self.log("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job_name, job['state'], wait_for))
                 wait_for *= 2
                 wait_for = min([wait_for, MAX_WAIT])
                 time.sleep(wait_for)
@@ -81,6 +85,7 @@ class SgeJob(object):
         xml_string = subprocess.check_output("qstat -xml", shell = True)
         xml_obj = ET.fromstring(xml_string)
         jobs = list()
+        
         for job_list in xml_obj.iter("job_list"):
             job = dict()
             for elem in job_list:

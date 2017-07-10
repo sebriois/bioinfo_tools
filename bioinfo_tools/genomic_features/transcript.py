@@ -70,7 +70,7 @@ class Transcript(object):
             nucleic_sequence = self.nucleic_coding_sequence
             
             if not nucleic_sequence:
-                return None
+                return Seq("")
             
             # make sure the sequence length is a multiple of 3
             end_position = len(nucleic_sequence) - len(nucleic_sequence) % 3
@@ -79,10 +79,7 @@ class Transcript(object):
             else:
                 nucleic_sequence = nucleic_sequence[:end_position]
             
-            try:
-                self._protein_sequence = nucleic_sequence.translate()
-            except TypeError:
-                print("Received weird nucleic_sequence type: %s - %s" % (type(nucleic_sequence), nucleic_sequence))
+            self._protein_sequence = nucleic_sequence.translate()
         
         return self._protein_sequence
     
