@@ -1,6 +1,6 @@
 from typing import Tuple, Iterable
 
-from Bio import Seq
+import re
 from Bio import SeqIO
 
 
@@ -11,6 +11,6 @@ class FastaParser(object):
     def read(self, fasta_file: str) -> Iterable[Tuple[str,str]]:
         with open(fasta_file) as fh:
             for record in SeqIO.parse(fh, "fasta"):
-                seqid = record.id.split("|")[-1]
+                seqid = re.split("\||\:", record.id, 1)[1]
                 seq = str(record.seq)
                 yield (seqid, seq)
