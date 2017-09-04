@@ -64,4 +64,4 @@ class Log:
         if self.logger:
             self.logger.log(level, " ".join(msg))
         else:
-            print(msg)
+            print(*msg)
