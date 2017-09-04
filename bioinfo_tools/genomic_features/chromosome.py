@@ -19,15 +19,21 @@ class Chromosome(object):
         gene_id = None
         
         if 'gene_id' in gff_feature:
-            gene_id = gff_feature['gene_id']
+            gene_id = gff_feature.pop('gene_id')
         elif 'attributes' in gff_feature:
-            if 'Name' in gff_feature['attributes']:
+            if 'gene_id' in gff_feature['attributes']:
+                gene_id = gff_feature['attributes'].pop('gene_id')
+            elif 'Name' in gff_feature['attributes']:
                 gene_id = gff_feature['attributes']['Name']
             elif 'ID' in gff_feature['attributes']:
                 gene_id = gff_feature['attributes']['ID']
         
         if not gene_id:
             raise Exception("gene_id not found in given GFF feature")
+        
+        # remove all potential duplicated keys
+        for key_name in ('chromosome', 'start', 'end', 'strand', 'assembly_name'):
+            gff_feature.get('attributes', {}).pop(key_name, None)
         
         gene = Gene(
             gene_id = gene_id,

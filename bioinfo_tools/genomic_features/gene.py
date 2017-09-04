@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import List
+from typing import List, Dict
 
 from Bio.SeqFeature import FeatureLocation
 from Bio.SeqRecord import SeqRecord
@@ -12,7 +12,7 @@ class Gene(object):
         self.gene_id = gene_id
         self.chromosome = chromosome
         self.attributes = gff_attributes
-        self.transcripts = []
+        self.transcripts = list()
         self.assembly_name = assembly_name
         
         if strand in ("-1", -1, "-"):
@@ -45,13 +45,19 @@ class Gene(object):
         transcript_id = None
         
         if 'transcript_id' in mRNA_feature:
-            transcript_id = mRNA_feature['transcript_id']
+            transcript_id = mRNA_feature.pop('transcript_id')
         elif 'attributes' in mRNA_feature:
+            if 'transcript_id' in mRNA_feature['attributes']:
+                transcript_id = mRNA_feature['attributes'].pop('transcript_id')
             if 'Name' in mRNA_feature['attributes']:
                 transcript_id = mRNA_feature['attributes']['Name']
             elif 'ID' in mRNA_feature['attributes']:
                 transcript_id = mRNA_feature['attributes']['ID']
-    
+
+        # remove all potential duplicated keys
+        for key_name in ('chromosome', 'start', 'end', 'strand'):
+            mRNA_feature.get('attributes', {}).pop(key_name, None)
+
         transcript = Transcript(
             transcript_id = transcript_id,
             chromosome = self.chromosome,
