@@ -1,12 +1,12 @@
 from setuptools import setup
 import sys
 
-if sys.version_info < (3,5):
-    sys.exit('Sorry, Python < 3.5 is not supported')
+if sys.version_info < (3,6):
+    sys.exit('Sorry, Python < 3.6 is not supported')
 
 setup(
     name='bioinfo_tools',
-    version='0.1.2',
+    version='0.1.3',
     url='https://github.com/sebriois/bioinfo_tools',
     author='Sebastien Briois, Guillaume Tiberi',
     author_email='sebriois@gmail.com',
