@@ -1,83 +1,68 @@
 import copy
 import re
-import ssl
 
-import urllib
-
-# FIXME: bad practice, unsafe, etc.
 from bioinfo_tools.utils.log import Log
-
-ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class OboParser(Log):
     DEFAULT_KEPT_FIELDS = ['id', 'name', 'namespace', 'def', 'synonym', 'is_a']
 
-    def __init__(self, use_proxy = False, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.terms = {}
-        self.use_proxy = use_proxy
 
-    def read(self, uri, kept_fields = None, prefix_with = None):
+    def read(self, file_handler, kept_fields = None, prefix_with = None):
         """
         Parses a OBO file v1.2 format.
         return all Term entries
         """
         self.terms = {}
         kept_fields = kept_fields is not None and kept_fields or self.DEFAULT_KEPT_FIELDS
+    
+        current_term = None
+        for line in file_handler:
+            line = line.strip()
+            if not line:
+                continue  # Skip empty
 
-        # set proxies as empty
-        if not self.use_proxy:
-            proxy_handler = urllib.request.ProxyHandler({})
-            opener = urllib.request.build_opener(proxy_handler)
-            urllib.request.install_opener(opener)
+            if line == "[Term]":
+                if current_term:
+                    self.terms[current_term['id']] = current_term
+                current_term = {}
 
-        self.log("Downloading %s" % uri)
-        with urllib.request.urlopen(uri) as f:
-            current_term = None
-            for line in f:
-                line = line.decode().strip()
-                if not line:
-                    continue  # Skip empty
+            elif line == "[Typedef]":  # Skip [Typedef] sections
+                current_term = None
 
-                if line == "[Term]":
-                    if current_term:
-                        self.terms[current_term['id']] = current_term
-                    current_term = {}
-
-                elif line == "[Typedef]":  # Skip [Typedef] sections
+            elif current_term is not None:  # Only process if we're inside a [Term] environment
+                key, value = line.split(": ", 1)
+                if key == 'is_obsolete':
                     current_term = None
+                    continue
 
-                elif current_term is not None:  # Only process if we're inside a [Term] environment
-                    key, value = line.split(": ", 1)
-                    if key == 'is_obsolete':
-                        current_term = None
-                        continue
+                if key not in kept_fields:
+                    continue
 
-                    if key not in kept_fields:
-                        continue
+                value = value.strip()
 
-                    value = value.strip()
+                m = re.search('"(.*)"', value)  # only keep text wrapped in double quotes (if any)
+                if m:
+                    value = m.group(1)
 
-                    m = re.search('"(.*)"', value)  # only keep text wrapped in double quotes (if any)
-                    if m:
-                        value = m.group(1)
+                if key == 'is_a':
+                    value = value.split(' ! ')[0]
 
-                    if key == 'is_a':
-                        value = value.split(' ! ')[0]
+                if key not in current_term:
+                    current_term[key] = value
+                    if key in ['is_a', 'synonym']:  # force storing of these keys as list
+                        current_term[key] = [value]
+                else:
+                    if not isinstance(current_term[key], list):
+                        current_term[key] = [current_term[key]]
+                    current_term[key].append(value)
 
-                    if key not in current_term:
-                        current_term[key] = value
-                        if key in ['is_a', 'synonym']:  # force storing of these keys as list
-                            current_term[key] = [value]
-                    else:
-                        if not isinstance(current_term[key], list):
-                            current_term[key] = [current_term[key]]
-                        current_term[key].append(value)
-
-            # Add last term
-            if current_term is not None:
-                self.terms[current_term['id']] = current_term
+        # Add last term
+        if current_term is not None:
+            self.terms[current_term['id']] = current_term
 
         if prefix_with:
             for term_id, term in self.terms.items():

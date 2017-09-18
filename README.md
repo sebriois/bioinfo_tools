@@ -1,4 +1,4 @@
-# bioinfo_tools 0.1.3
+# bioinfo_tools 0.1.4
 
 ## Installation
 
@@ -39,11 +39,13 @@ with open("/path/to/file.gff") as fh:
 
 ### OBO parser
 
+
 ```python
 from bioinfo_tools.parsers.obo import OboParser
 
 obo_parser = OboParser()
-go_terms = obo_parser.read("http://geneontology.org/ontology/go-basic.obo")
+with open("/path/to/file.obo") as fh:
+    go_terms = obo_parser.read(fh)
 
 for go_term in go_terms.values():
     print(go_term)
