@@ -1,18 +1,16 @@
-===================
-bioinfo_tools 0.1.3
-===================
+# bioinfo_tools 0.1.3
 
-# Installation
+## Installation
 
 ```bash
 pip install bioinfo_tools
 ```
 
-# Parsers
+## Parsers
 
 *HEADS UP!* These parsers are still under development and usage is not consistent from one parser to another.
 
-## Fasta parser
+### Fasta parser
 
 ```python
 from bioinfo_tools.parsers.fasta import FastaParser
@@ -28,7 +26,7 @@ for seqid, sequence in fasta_parser.read("/path/to/file.fasta", id_separator=" "
     print(seqid, sequence)
 ```
 
-## GFF parser
+### GFF parser
 
 ```python
 from bioinfo_tools.parsers.gff import Gff3
@@ -39,7 +37,7 @@ with open("/path/to/file.gff") as fh:
         print(gene)
 ```
 
-## OBO parser
+### OBO parser
 
 ```python
 from bioinfo_tools.parsers.obo import OboParser
