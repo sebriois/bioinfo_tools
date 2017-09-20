@@ -35,10 +35,7 @@ class OboParser(Log):
 
             elif current_term is not None:  # Only process if we're inside a [Term] environment
                 key, value = line.split(": ", 1)
-                if key == 'is_obsolete':
-                    current_term = None
-                    continue
-
+                
                 if key not in kept_fields:
                     continue
 
