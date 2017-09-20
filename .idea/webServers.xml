@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="10211da3-dcc3-4d30-b074-36fbf74db2bd" name="home RTP" url="http://demeter.nafta.syngenta.org">
+        <fileTransfer host="demeter.nafta.syngenta.org" port="22" rootFolder="/home/u770707/" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
