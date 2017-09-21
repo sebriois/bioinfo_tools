@@ -5,7 +5,7 @@ from bioinfo_tools.utils.log import Log
 
 
 class OboParser(Log):
-    DEFAULT_KEPT_FIELDS = ['id', 'name', 'namespace', 'def', 'synonym', 'is_a']
+    DEFAULT_KEPT_FIELDS = ['id', 'name', 'namespace', 'def', 'synonym', 'is_a', 'alt_id']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -28,6 +28,8 @@ class OboParser(Log):
             if line == "[Term]":
                 if current_term:
                     self.terms[current_term['id']] = current_term
+                    for alt_id in current_term.get('alt_id', []):
+                        self.terms[alt_id] = copy.deepcopy(current_term)
                 current_term = {}
 
             elif line == "[Typedef]":  # Skip [Typedef] sections
