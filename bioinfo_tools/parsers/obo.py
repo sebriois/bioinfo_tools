@@ -30,6 +30,7 @@ class OboParser(Log):
                     self.terms[current_term['id']] = current_term
                     for alt_id in current_term.get('alt_id', []):
                         self.terms[alt_id] = copy.deepcopy(current_term)
+                        self.terms[alt_id]["id"] = alt_id
                 current_term = {}
 
             elif line == "[Typedef]":  # Skip [Typedef] sections
