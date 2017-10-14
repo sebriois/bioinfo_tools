@@ -65,7 +65,11 @@ class Chromosome(object):
     def get_genes_at(self, position) -> Set[Gene]:
         if not self._index_by_position:
             self.build_index()
-        return self._index_by_position.get(position, set())
+        found_genes = set()
+        for interval, gene in self._index_by_position.items():
+            if position in interval:
+                found_genes.add(Gene)
+        return found_genes
     
     def get_gene(self, gene_id) -> Gene:
         return self._genes.get(gene_id, None)
@@ -78,11 +82,7 @@ class Chromosome(object):
     def _add_gene_to_index(self, gene:Gene):
         if not hasattr(self, "_index_by_position"):
             self._index_by_position = dict()
-        
-        for position in range(gene.location.start, gene.location.end + 1):
-            if not position in self._index_by_position:
-                self._index_by_position[position] = set()
-            self._index_by_position[position].add(Gene)
+        self._index_by_position[range(gene.location.start, gene.location.end + 1)] = Gene
 
     def attach_nucleic_sequence(self, sequence):
         self.nucleic_sequence = sequence
