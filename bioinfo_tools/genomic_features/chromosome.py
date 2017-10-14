@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from Bio.SeqFeature import FeatureLocation
 
@@ -11,6 +11,7 @@ class Chromosome(object):
         self.assembly_name = assembly_name
         self.length = 0
         self._genes = {}
+        self._index_by_position = dict()
     
     def __repr__(self):
         return u"%s (%s genes)" % (self.chromosome_id, len(self.genes))
@@ -48,6 +49,7 @@ class Chromosome(object):
             gene.add_transcript(transcript)
         
         self._genes[gene['gene_id']] = gene
+        self._add_gene_to_index(gene)
         return gene
     
     @property
@@ -60,8 +62,27 @@ class Chromosome(object):
             self._sorted_genes = sorted(self._genes.values(), key = lambda gene: gene.location.start)
         return self._sorted_genes
     
+    def get_genes_at(self, position) -> Set[Gene]:
+        if not self._index_by_position:
+            self.build_index()
+        return self._index_by_position.get(position, set())
+    
     def get_gene(self, gene_id) -> Gene:
         return self._genes.get(gene_id, None)
+
+    def build_index(self):
+        self._index_by_position = dict()
+        for gene in self.genes:
+            self._add_gene_to_index(gene)
+    
+    def _add_gene_to_index(self, gene:Gene):
+        if not hasattr(self, "_index_by_position"):
+            self._index_by_position = dict()
+        
+        for position in range(gene.location.start, gene.location.end + 1):
+            if not position in self._index_by_position:
+                self._index_by_position[position] = set()
+            self._index_by_position[position].add(Gene)
 
     def attach_nucleic_sequence(self, sequence):
         self.nucleic_sequence = sequence
