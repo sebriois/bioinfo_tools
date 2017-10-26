@@ -21,14 +21,17 @@ def fetch_taxonomy(species_name):
         ncbi_response = r.read()
     
     json_response = json.loads(ncbi_response.decode())
-    ncbi_id = json_response.get("esearchresult", {}).get("idlist", []).pop(0, None)
     
+    ncbi_id = None
     ncbi_xml = None
-    if ncbi_id:
-        url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=" + ncbi_id
-        with request.urlopen(url) as r:
-            ncbi_response = r.read()
-        ncbi_xml = ncbi_response.decode()
+    
+    if int(json_response.get("esearchresult", {}).get("count", 0)) > 0:
+        ncbi_id = json_response.get("esearchresult", {}).get("idlist", [])[0]
+        if ncbi_id:
+            url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=" + ncbi_id
+            with request.urlopen(url) as r:
+                ncbi_response = r.read()
+            ncbi_xml = ncbi_response.decode()
     
     return ncbi_id, ncbi_xml
 
