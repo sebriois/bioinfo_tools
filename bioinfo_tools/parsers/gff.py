@@ -63,6 +63,9 @@ class Gff3(object):
             line = next(fh)
         except StopIteration:
             return None
+        
+        if isinstance(line, bytes):
+            line = line.decode()
 
         line = line.strip()
         if not line:

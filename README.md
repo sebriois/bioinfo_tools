@@ -1,4 +1,4 @@
-# bioinfo_tools 0.1.13
+# bioinfo_tools 0.2
 
 ## Installation
 
@@ -32,7 +32,12 @@ for seqid, sequence in fasta_parser.read("/path/to/file.fasta", id_separator=" "
 from bioinfo_tools.parsers.gff import Gff3
 
 gff_parser = Gff3()
-with open("/path/to/file.gff") as fh:
+with open("/path/to/file.gff", "r") as fh:
+    for gene in gff_parser.read(fh):
+        print(gene)
+
+import gzip
+with gzip.open("/path/to/file.gz", "rb") as fh:
     for gene in gff_parser.read(fh):
         print(gene)
 ```
