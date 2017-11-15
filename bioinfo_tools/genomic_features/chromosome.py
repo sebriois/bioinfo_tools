@@ -62,13 +62,13 @@ class Chromosome(object):
             self._sorted_genes = sorted(self._genes.values(), key = lambda gene: gene.location.start)
         return self._sorted_genes
     
-    def get_genes_at(self, position) -> Set[Gene]:
+    def get_genes_at(self, position) -> List[Gene]:
         if not self._index_by_position:
             self.build_index()
-        found_genes = set()
+        found_genes = list()
         for interval, gene in self._index_by_position.items():
-            if position in interval:
-                found_genes.add(Gene)
+            if position in interval and gene not in found_genes:
+                found_genes.append(gene)
         return found_genes
     
     def get_gene(self, gene_id) -> Gene:
@@ -82,7 +82,7 @@ class Chromosome(object):
     def _add_gene_to_index(self, gene:Gene):
         if not hasattr(self, "_index_by_position"):
             self._index_by_position = dict()
-        self._index_by_position[range(gene.location.start, gene.location.end + 1)] = Gene
+        self._index_by_position[range(gene.location.start, gene.location.end + 1)] = gene
 
     def attach_nucleic_sequence(self, sequence):
         self.nucleic_sequence = sequence
