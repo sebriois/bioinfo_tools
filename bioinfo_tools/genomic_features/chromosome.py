@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Dict, List, Set
 
 from Bio.SeqFeature import FeatureLocation
@@ -30,6 +31,7 @@ class Chromosome(object):
                 gene_id = gff_feature['attributes']['ID']
         
         if not gene_id:
+            pprint(gff_feature)
             raise Exception("gene_id not found in given GFF feature")
         
         # remove all potential duplicated keys
@@ -54,6 +56,9 @@ class Chromosome(object):
     
     @property
     def genes(self) -> List[Gene]:
+        """
+        :rtype: List[Gene]
+        """
         return list(self._genes.values())
     
     @property
