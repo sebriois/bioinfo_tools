@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import Dict, List, Set
+from typing import Dict, List
 
 from Bio.SeqFeature import FeatureLocation
 
@@ -17,25 +17,33 @@ class Chromosome(object):
     def __repr__(self):
         return u"%s (%s genes)" % (self.chromosome_id, len(self.genes))
     
-    def add_gene(self, gff_feature:Dict):
+    def add_gene(self, gff_feature, lookup_attributes = ('gene_id', 'Name', 'ID', 'id')):
+        """
+        :param gff_feature: dictionnary of various gff features
+        :type gff_feature: dict
+        
+        :param lookup_attributes: potential attribute names hosting the gene ID
+        :type lookup_attributes: tuple
+        
+        :return: created gene object
+        :rtype: Gene
+        """
         gene_id = None
         
         if 'gene_id' in gff_feature:
             gene_id = gff_feature.pop('gene_id')
         elif 'attributes' in gff_feature:
-            if 'gene_id' in gff_feature['attributes']:
-                gene_id = gff_feature['attributes'].pop('gene_id')
-            elif 'Name' in gff_feature['attributes']:
-                gene_id = gff_feature['attributes']['Name']
-            elif 'ID' in gff_feature['attributes']:
-                gene_id = gff_feature['attributes']['ID']
+            for attribute in lookup_attributes:
+                if attribute in gff_feature['attributes'] and gff_feature['attributes'][attribute].rstrip():
+                    gene_id = gff_feature['attributes'][attribute]
+                    break
         
         if not gene_id:
             pprint(gff_feature)
             raise Exception("gene_id not found in given GFF feature")
         
         # remove all potential duplicated keys
-        for key_name in ('chromosome', 'start', 'end', 'strand', 'assembly_name'):
+        for key_name in ('chromosome', 'start', 'end', 'strand', 'assembly_name', 'gene_id'):
             gff_feature.get('attributes', {}).pop(key_name, None)
         
         gene = Gene(

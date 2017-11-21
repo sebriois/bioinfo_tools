@@ -41,21 +41,28 @@ class Gene(object):
     def get(self, *args):
         return self.__dict__.get(*args)
     
-    def add_transcript(self, mRNA_feature):
+    def add_transcript(self, mRNA_feature, lookup_attributes = ('transcript_id', 'Name', 'ID', 'id')):
+        """
+        :param mRNA_feature: dictionnary of various gff features describing the transcript
+        :type mRNA_feature: dict
+        
+        :param lookup_attributes: potential attribute names hosting the gene ID
+        :type lookup_attributes: tuple
+        
+        :return: None
+        """
         transcript_id = None
         
         if 'transcript_id' in mRNA_feature:
             transcript_id = mRNA_feature.pop('transcript_id')
         elif 'attributes' in mRNA_feature:
-            if 'transcript_id' in mRNA_feature['attributes']:
-                transcript_id = mRNA_feature['attributes'].pop('transcript_id')
-            if 'Name' in mRNA_feature['attributes']:
-                transcript_id = mRNA_feature['attributes']['Name']
-            elif 'ID' in mRNA_feature['attributes']:
-                transcript_id = mRNA_feature['attributes']['ID']
+            for attribute in lookup_attributes:
+                if attribute in mRNA_feature['attributes'] and mRNA_feature['attributes'][attribute].rstrip():
+                    transcript_id = mRNA_feature['attributes'][attribute]
+                    break
 
         # remove all potential duplicated keys
-        for key_name in ('chromosome', 'start', 'end', 'strand'):
+        for key_name in ('chromosome', 'start', 'end', 'strand', 'transcript_id'):
             mRNA_feature.get('attributes', {}).pop(key_name, None)
 
         transcript = Transcript(
