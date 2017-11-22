@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import List, Dict
+from typing import List
 
 from Bio.SeqFeature import FeatureLocation
 from Bio.SeqRecord import SeqRecord
@@ -17,7 +17,7 @@ class Gene(object):
         
         if strand in ("-1", -1, "-"):
             self.strand = -1
-        elif strand in ("+1", "1", 1, "+"):
+        else:
             self.strand = 1
         
         self.location = FeatureLocation(start = start, end = end, strand = self.strand, ref = gene_id)

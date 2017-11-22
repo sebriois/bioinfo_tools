@@ -13,7 +13,7 @@ class Transcript(object):
         
         if strand in ("-1", -1, "-"):
             strand = -1
-        elif strand in ("+1", "1", 1, "+"):
+        else:
             strand = 1
         
         self.location = FeatureLocation(start = start, end = end, strand = strand, ref = transcript_id)
