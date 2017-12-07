@@ -62,9 +62,10 @@ class Transcript(object):
             return None
     
     @property
-    def protein_sequence(self) -> Seq:
+    def protein_sequence(self):
         """
         Return the protein sequence for this transcript using CDS annotations
+        :rtype: Bio.Seq.Seq
         """
         if not self._protein_sequence:
             nucleic_sequence = self.nucleic_coding_sequence
@@ -88,25 +89,37 @@ class Transcript(object):
         :type feature_type: str
         :rtype: Bio.Seq.Seq
         """
-        location = self._get_features(feature_type)
-        if location:
-            return location.extract(self.chromosome.nucleic_sequence)
+        locations = self._get_features(feature_type)
+        if locations:
+            if len(locations) > 1:
+                feature = CompoundLocation(locations)
+            else:
+                feature = locations[0]
+            
+            return feature.extract(self.chromosome.nucleic_sequence)
         return None
     
     @property
     def nucleic_coding_sequence(self) -> Seq:
         if not self._nucleic_coding_sequence:
-            if self.cds:
-                self._nucleic_coding_sequence = self.cds.extract(self.chromosome.nucleic_sequence)
-                if self.location.strand == -1:
-                    self._nucleic_coding_sequence = Seq(self._nucleic_coding_sequence).reverse_complement()
-        
+            if self.cds and len(self.cds) > 1:
+                cds = CompoundLocation(self.cds)
+            else:
+                cds = self.cds[0]
+            
+            self._nucleic_coding_sequence = cds.extract(self.chromosome.nucleic_sequence)
+            if self.location.strand == -1:
+                self._nucleic_coding_sequence = Seq(self._nucleic_coding_sequence).reverse_complement()
+    
         return self._nucleic_coding_sequence
     
     @property
-    def cds(self) -> CompoundLocation:
+    def cds(self):
+        """
+        :rtype: list[FeatureLocation]
+        """
         if not hasattr(self, "_cds"):
-            cds_list = sorted(
+            self._cds = sorted(
                 map(
                     lambda exon: FeatureLocation(
                         start = max(exon.start, self.polypeptide.start),
@@ -114,28 +127,28 @@ class Transcript(object):
                     ),
                     filter(
                         lambda exon: exon.start <= self.polypeptide.end and exon.end >= self.polypeptide.start,
-                        self.exons.parts
+                        self.exons
                     ),
                 ),
                 key = lambda exon: exon.start
             )
-            
-            if len(cds_list) == 1:
-                self._cds = cds_list[0]
-            
-            if len(cds_list) > 1:
-                self._cds = CompoundLocation(cds_list)
         
         return self._cds
     
     @property
     def exons(self):
+        """
+        :rtype: list[FeatureLocation]
+        """
         if self._exons is None:
             self._exons = self._get_features("exon")
         return self._exons
     
     @property
     def introns(self):
+        """
+        :type: list[FeatureLocation]
+        """
         if not hasattr(self, '_introns'):
             self._introns = []
         
@@ -145,23 +158,26 @@ class Transcript(object):
                 end = next_exon.location.start - 1
                 if abs(end - start) > 1:
                     self._introns.append(FeatureLocation(start = start, end = end))
-            
-            if len(self._introns) > 1:
-                self._introns = CompoundLocation(self._introns)
         
         return self._introns
     
     @property
     def polypeptide(self):
+        """
+        :rtype: FeatureLocation
+        """
         if self._polypeptide is None:
-            self._polypeptide = self._get_features("polypeptide")
+            self._polypeptide = self._get_features("polypeptide")[0]
         
         return self._polypeptide
     
     @property
     def five_prime_utr(self):
+        """
+        :rtype: list[FeatureLocation]
+        """
         if self._five_prime_utr is None:
-            utr_list = sorted(
+            self._five_prime_utr = sorted(
                 map(
                     lambda exon: FeatureLocation(
                         start = exon.start,
@@ -169,25 +185,41 @@ class Transcript(object):
                     ),
                     filter(
                         lambda exon: exon.start <= self.polypeptide.start,
-                        self.exons.parts
+                        self.exons
                     )
                 ),
                 key = lambda exon: exon.start
             )
-            
-            if len(utr_list) == 1:
-                self._five_prime_utr = utr_list[0]
-            
-            elif len(utr_list) > 1:
-                self._five_prime_utr = CompoundLocation(utr_list)
         
         return self._five_prime_utr
     
     @property
     def three_prime_utr(self):
-        return self._get_features("three_prime_utr")
+        """
+        :rtype: list[FeatureLocation]
+        """
+        if not hasattr(self, '_three_prime_utr'):
+            self._three_prime_utr = sorted(
+                map(
+                    lambda exon: FeatureLocation(
+                        start = max(exon.start, self.polypeptide.end),
+                        end = exon.end
+                    ),
+                    filter(
+                        lambda exon: exon.end >= self.polypeptide.end,
+                        self.exons
+                    )
+                ),
+                key = lambda exon: exon.start
+            )
+        
+        return self._three_prime_utr
     
-    def _get_features(self, feature_type:str):
+    def _get_features(self, feature_type):
+        """
+        :type feature_type: str
+        :rtype: list[FeatureLocation]
+        """
         locations = []
         features = sorted(
             filter(lambda f: f['type'].lower() == feature_type, self.features),
@@ -196,10 +228,4 @@ class Transcript(object):
         for feature in features:
             locations.append(FeatureLocation(feature['start'], feature['end']))
         
-        if len(locations) == 1:
-            return locations[0]
-        if len(locations) > 1:
-            return CompoundLocation(locations)
-        if len(features) > 0:
-            return features[0]
-        return None
+        return locations
