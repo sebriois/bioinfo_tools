@@ -135,6 +135,23 @@ class Transcript(object):
         return self._exons
     
     @property
+    def introns(self):
+        if not hasattr(self, '_introns'):
+            self._introns = []
+        
+            for i in range(len(self.exons) - 1):
+                prev_exon, next_exon = self.exons[i:i + 2]
+                start = prev_exon.location.end + 1
+                end = next_exon.location.start - 1
+                if abs(end - start) > 1:
+                    self._introns.append(FeatureLocation(start = start, end = end))
+            
+            if len(self._introns) > 1:
+                self._introns = CompoundLocation(self._introns)
+        
+        return self._introns
+    
+    @property
     def polypeptide(self):
         if self._polypeptide is None:
             self._polypeptide = self._get_features("polypeptide")

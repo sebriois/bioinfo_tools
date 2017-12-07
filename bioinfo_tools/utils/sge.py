@@ -69,6 +69,8 @@ class SgeJob(Log):
             raise Exception("something went wrong with the job submission: %s" % qsub_response)
         
         job = self.qstat(self._job_id)
+        if job['state'] == 'Eqw':
+            raise Exception("something went wrong with the job submission: 'Eqw' status")
         
         if sync:
             wait_for = 2  # seconds
