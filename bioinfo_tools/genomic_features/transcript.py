@@ -154,8 +154,8 @@ class Transcript(object):
         
             for i in range(len(self.exons) - 1):
                 prev_exon, next_exon = self.exons[i:i + 2]
-                start = prev_exon.location.end + 1
-                end = next_exon.location.start - 1
+                start = prev_exon.end + 1
+                end = next_exon.start - 1
                 if abs(end - start) > 1:
                     self._introns.append(FeatureLocation(start = start, end = end))
         
