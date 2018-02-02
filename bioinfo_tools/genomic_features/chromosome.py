@@ -1,8 +1,5 @@
 from pprint import pprint
-from typing import Dict, List
-
 from Bio.SeqFeature import FeatureLocation
-
 from bioinfo_tools.genomic_features.gene import Gene
 
 
@@ -55,27 +52,34 @@ class Chromosome(object):
             assembly_name = self.assembly_name,
             **gff_feature.get('attributes', {})
         )
-        for transcript in gff_feature.get('mRNA', []):
-            gene.add_transcript(transcript)
+        for feature_type in ('mRNA', 'RNA', 'transcript'):
+            for transcript in gff_feature.get(feature_type, gff_feature.get(feature_type.lower(), gff_feature.get(feature_type.upper(), []))):
+                gene.add_transcript(transcript)
         
         self._genes[gene['gene_id']] = gene
         self._add_gene_to_index(gene)
         return gene
     
     @property
-    def genes(self) -> List[Gene]:
+    def genes(self):
         """
         :rtype: List[Gene]
         """
         return list(self._genes.values())
     
     @property
-    def sorted_genes(self) -> List[Gene]:
+    def sorted_genes(self):
+        """
+        :rtype: List[Gene]
+        """
         if not hasattr(self, "_sorted_genes"):
             self._sorted_genes = sorted(self._genes.values(), key = lambda gene: gene.location.start)
         return self._sorted_genes
     
-    def get_genes_at(self, position) -> List[Gene]:
+    def get_genes_at(self, position):
+        """
+        :rtype: List[Gene]
+        """
         if not self._index_by_position:
             self.build_index()
         found_genes = list()
@@ -84,7 +88,12 @@ class Chromosome(object):
                 found_genes.append(gene)
         return found_genes
     
-    def get_gene(self, gene_id) -> Gene:
+    def get_gene(self, gene_id):
+        """
+        :param gene_id: some gene ID
+        :type gene_id: str
+        :rtype: Gene
+        """
         return self._genes.get(gene_id, None)
 
     def build_index(self):
@@ -92,7 +101,11 @@ class Chromosome(object):
         for gene in self.genes:
             self._add_gene_to_index(gene)
     
-    def _add_gene_to_index(self, gene:Gene):
+    def _add_gene_to_index(self, gene):
+        """
+        :param gene: a Gene object
+        :type gene: Gene
+        """
         if not hasattr(self, "_index_by_position"):
             self._index_by_position = dict()
         self._index_by_position[range(gene.location.start, gene.location.end + 1)] = gene

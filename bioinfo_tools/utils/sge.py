@@ -1,7 +1,6 @@
 import os
 import subprocess
 import re
-from datetime import datetime
 import time
 import xml.etree.ElementTree as ET
 

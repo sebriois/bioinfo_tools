@@ -1,5 +1,3 @@
-from typing import Set
-
 from Bio.Seq import Seq
 from Bio.SeqFeature import FeatureLocation, CompoundLocation
 
@@ -33,7 +31,10 @@ class Transcript(object):
     def get(self, attribute):
         return self.__dict__.get(attribute, None)
     
-    def get_all_ids(self) -> Set[str]:
+    def get_all_ids(self):
+        """
+        :rtype: set[str]
+        """
         all_ids = set()  # all possible IDs for the given gene
         
         transcript_name = self.attributes.get('Name', None)
@@ -100,7 +101,10 @@ class Transcript(object):
         return None
     
     @property
-    def nucleic_coding_sequence(self) -> Seq:
+    def nucleic_coding_sequence(self):
+        """
+        :rtype: Bio.Seq.Seq
+        """
         if not self._nucleic_coding_sequence:
             if self.cds and len(self.cds) > 1:
                 cds = CompoundLocation(self.cds)

@@ -1,5 +1,3 @@
-from typing import Tuple, Iterable
-
 import re
 from Bio import SeqIO
 
@@ -8,7 +6,13 @@ class FastaParser(object):
     def __init__(self):
         pass
     
-    def read(self, fasta_file: str, id_separator = "\||\:", all_after_sep = True) -> Iterable[Tuple[str,str]]:
+    def read(self, fasta_file, id_separator = "\||\:", all_after_sep = True):
+        """
+        :type fasta_file: str
+        :type id_separator: str
+        :type all_after_sep: boolean
+        :rtype: iterable[tuple[str,str]]
+        """
         with open(fasta_file) as fh:
             for record in SeqIO.parse(fh, "fasta"):
                 try:

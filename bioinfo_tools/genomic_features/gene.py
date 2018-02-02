@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from typing import List
-
 from Bio.SeqFeature import FeatureLocation
 from Bio.SeqRecord import SeqRecord
 
@@ -84,10 +82,10 @@ class Gene(object):
         location = FeatureLocation(self.location.start - upstream, self.location.end + downstream, self.strand)
         return location.extract(self.chromosome.nucleic_sequence)
 
-    def get_all_ids(self) -> List[str]:
+    def get_all_ids(self):
         """
         return all possible IDs for that gene
-        :rtype: set
+        :rtype: list[str]
         """
         if not hasattr(self, '_all_ids'):
             all_ids = set()  # all possible IDs for the given gene
