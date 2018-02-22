@@ -8,7 +8,7 @@ class Chromosome(object):
         self.chromosome_id = chromosome_id
         self.assembly_name = assembly_name
         self.length = 0
-        self._genes = {}
+        self._genes = dict()  # <gene_id>: <gene.Gene>
         self._index_by_position = dict()
     
     def __repr__(self):
@@ -52,12 +52,11 @@ class Chromosome(object):
             assembly_name = self.assembly_name,
             **gff_feature.get('attributes', {})
         )
-        for feature_type in ('mRNA', 'RNA', 'transcript'):
-            for transcript in gff_feature.get(feature_type, gff_feature.get(feature_type.lower(), gff_feature.get(feature_type.upper(), []))):
-                gene.add_transcript(transcript)
+        for transcript in gff_feature.get('mRNA', []):
+            gene.add_transcript(transcript)
         
         self._genes[gene['gene_id']] = gene
-        self._add_gene_to_index(gene)
+        
         return gene
     
     @property
@@ -76,39 +75,13 @@ class Chromosome(object):
             self._sorted_genes = sorted(self._genes.values(), key = lambda gene: gene.location.start)
         return self._sorted_genes
     
-    def get_genes_at(self, position):
-        """
-        :rtype: List[Gene]
-        """
-        if not self._index_by_position:
-            self.build_index()
-        found_genes = list()
-        for interval, gene in self._index_by_position.items():
-            if position in interval and gene not in found_genes:
-                found_genes.append(gene)
-        return found_genes
-    
     def get_gene(self, gene_id):
         """
         :param gene_id: some gene ID
         :type gene_id: str
-        :rtype: Gene
+        :rtype: gene.Gene
         """
         return self._genes.get(gene_id, None)
-
-    def build_index(self):
-        self._index_by_position = dict()
-        for gene in self.genes:
-            self._add_gene_to_index(gene)
-    
-    def _add_gene_to_index(self, gene):
-        """
-        :param gene: a Gene object
-        :type gene: Gene
-        """
-        if not hasattr(self, "_index_by_position"):
-            self._index_by_position = dict()
-        self._index_by_position[range(gene.location.start, gene.location.end + 1)] = gene
 
     def attach_nucleic_sequence(self, sequence):
         self.nucleic_sequence = sequence

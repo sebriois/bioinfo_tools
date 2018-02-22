@@ -27,7 +27,7 @@ class Gff3(object):
                 
                 gene = feature
             
-            elif feature['type'] in ('mRNA', 'mrna'):
+            elif feature['type'] in ('mRNA', 'mrna', 'transcript', 'RNA', 'rna'):
                 if mRNA is not None:
                     if 'mRNA' not in gene:
                         gene['mRNA'] = []
@@ -77,7 +77,6 @@ class Gff3(object):
         cols = re.split("\s+", line, 8)
         if len(cols) < 9:
             cols = re.split("\t", line, 8)
-        
         if len(cols) < 9:
             raise Exception("Missing attributes column in line: ['%s']" % "','".join(cols))
 
@@ -97,13 +96,19 @@ class Gff3(object):
         """
         Parse column #9 of a gff file
         """
-        attributes = {}
+        attributes = dict()
     
         for attribute in re.split(';', gff_column):
-            # handles cases such as ID=Name=toto
+            # handles cases such as ID=Name=gene_id=toto
             keys = attribute.split("=")[:-1]
             value = attribute.split("=")[-1]
-        
+            
+            # Build a dict looking like:
+            # {
+            #   'ID': 'toto',
+            #   'Name': 'toto',
+            #   'gene_id': 'toto'
+            # }
             for key in keys:
                 attributes[key] = value
     

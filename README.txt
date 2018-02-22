@@ -1,4 +1,4 @@
-# bioinfo_tools 0.2.7
+# bioinfo_tools 0.3.0
 
 ## Installation
 
