@@ -16,6 +16,9 @@ class Genome(object):
         self.chromosomes = dict()  # <chromosome_id>: <chromosome.Chromosome>
         self.protein_sequences = dict()  # <protein_id>: sequence
     
+    def __str__(self):
+        return self.name
+
     def get_gene(self, gene_id):
         """
         :param gene_id: a gene ID

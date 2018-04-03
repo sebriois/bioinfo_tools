@@ -106,14 +106,15 @@ class Transcript(object):
         :rtype: Bio.Seq.Seq
         """
         if not self._nucleic_coding_sequence:
-            if self.cds and len(self.cds) > 1:
-                cds = CompoundLocation(self.cds)
-            else:
-                cds = self.cds[0]
-            
-            self._nucleic_coding_sequence = cds.extract(self.chromosome.nucleic_sequence)
-            if self.location.strand == -1:
-                self._nucleic_coding_sequence = Seq(self._nucleic_coding_sequence).reverse_complement()
+            if self.cds:
+                if len(self.cds) > 1:
+                    cds = CompoundLocation(self.cds)
+                else:
+                    cds = self.cds[0]
+                
+                self._nucleic_coding_sequence = cds.extract(self.chromosome.nucleic_sequence)
+                if self.location.strand == -1:
+                    self._nucleic_coding_sequence = Seq(self._nucleic_coding_sequence).reverse_complement()
     
         return self._nucleic_coding_sequence
     
