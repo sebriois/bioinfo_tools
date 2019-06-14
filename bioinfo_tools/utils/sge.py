@@ -7,8 +7,7 @@ import xml.etree.ElementTree as ET
 from bioinfo_tools.utils.log import Log
 
 DEFAULT_SCRATCH_DIR = os.path.join(os.sep, os.environ.get("HOME"), "sge_logs")
-
-MAX_WAIT = 120  # seconds
+MAX_WAIT = 5*60  # seconds
 
 
 class SgeJob(Log):
@@ -75,12 +74,13 @@ class SgeJob(Log):
             raise Exception("something went wrong with the job submission: 'Eqw' status")
         
         if sync:
-            wait_for = 2  # seconds
+            waiting_time = 2  # seconds
             while job and job['state'] != 'Eqw':
-                self.log("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job_name, job['state'], wait_for))
-                wait_for *= 2
-                wait_for = min([wait_for, MAX_WAIT])
-                time.sleep(wait_for)
+
+                time.sleep(waiting_time)
+                waiting_time = min([waiting_time * 2, MAX_WAIT])
+        
+                self.log("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job['JB_name'], job['state'], waiting_time))
                 job = self.qstat(self._job_id)
         
         return job
