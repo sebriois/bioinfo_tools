@@ -63,7 +63,7 @@ class BlastCommand(Log):
         if isinstance(self.args['db'], list):
             self.args['db'] = "'" + " ".join(self.args['db']) + "'"
     
-    def run(self, job_name = None, use_sge = False, async = False):
+    def run(self, job_name = None, use_sge = False, run_async = False):
         """
         run blast command, either locally or through qsub
         """
@@ -73,10 +73,10 @@ class BlastCommand(Log):
             if not job_name:
                 job_name = os.path.basename(self.args['out']).split('.')[0]
             self.sge_job = SgeJob()
-            self.sge_job.submit(blast_commandline, job_name = '%s_%s' % (self.blast_prog, job_name), sync = not async)
+            self.sge_job.submit(blast_commandline, job_name = '%s_%s' % (self.blast_prog, job_name), sync = not run_async)
             return self.sge_job.get_job_id()
         else:
-            if async:
+            if run_async:
                 # TODO: make this option available locally
                 self.log("Can't run in async mode locally. Will run synchronously.")
             
@@ -86,7 +86,7 @@ class BlastCommand(Log):
                 raise Exception(e.output)
     
     def run_async(self, job_name = None, use_sge = False):
-        return self.run(job_name = job_name, use_sge = use_sge, async = True)
+        return self.run(job_name = job_name, use_sge = use_sge, run_async = True)
     
     def wait_for_output(self, max_checks = 10):
         """
