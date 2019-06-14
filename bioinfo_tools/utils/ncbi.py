@@ -63,16 +63,17 @@ class BlastCommand(Log):
         if isinstance(self.args['db'], list):
             self.args['db'] = "'" + " ".join(self.args['db']) + "'"
     
-    def run(self, job_name = None, use_sge = False, run_async = False):
+    def run(self, job_name = None, use_sge = False, run_async = False, ssh_client=None):
         """
         run blast command, either locally or through qsub
+        can be executed by ssh providing paramiko connected SSHClient
         """
         blast_commandline = self._create_commandline()
 
         if use_sge:
             if not job_name:
                 job_name = os.path.basename(self.args['out']).split('.')[0]
-            self.sge_job = SgeJob()
+            self.sge_job = SgeJob(ssh_client=ssh_client)
             self.sge_job.submit(blast_commandline, job_name = '%s_%s' % (self.blast_prog, job_name), sync = not run_async)
             return self.sge_job.get_job_id()
         else:
