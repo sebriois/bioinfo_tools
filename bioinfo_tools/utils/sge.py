@@ -42,7 +42,7 @@ class SgeJob(Log):
             self.params.append(param)
             self.params.append(value)
     
-    def submit(self, command_line, job_name = 'NO_NAME', sync = False):
+    def submit(self, command_line, job_name = 'NO_NAME', sync = False, mute=False):
         if '-q' not in self.params:
             self.params.extend(['-q', 'all.q'])
         
@@ -79,8 +79,10 @@ class SgeJob(Log):
 
                 time.sleep(waiting_time)
                 waiting_time = min([waiting_time * 2, MAX_WAIT])
-        
-                self.log("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job['JB_name'], job['state'], waiting_time))
+                
+                if not mute:
+                    self.log("job ID %s (%s) - state: %s (next check in %ssec)" % (self._job_id, job['JB_name'], job['state'], waiting_time))
+                    
                 job = self.qstat(self._job_id)
         
         return job
